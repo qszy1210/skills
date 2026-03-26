@@ -1,0 +1,40 @@
+---
+description: AutoResearch autonomous improvement loop
+globs: ["**/evaluate.py", "**/stop_conditions.json"]
+---
+
+# AutoResearch Mode
+
+When the user says "开始 autoresearch", "start autoresearch", or "autoresearch",
+enter the autonomous improvement loop.
+
+## Loop Protocol
+
+For each iteration:
+
+1. **Assess**: Run `python evaluate.py` and read the stderr output for dimension breakdown
+2. **Plan**: Identify the lowest-scoring dimension. Check `git log --oneline` to avoid
+   repeating approaches that already failed
+3. **Execute**: Make ONE targeted change to improve the lowest dimension
+4. **Verify**: Run `python evaluate.py` again — did the score improve?
+5. **Decide**:
+   - If improved: `git add -A && git commit` with descriptive message
+   - If not improved: `git checkout -- .` to revert
+6. **Check stops**: Compare against `stop_conditions.json`
+7. **Continue or stop**: Report result and proceed to next iteration
+
+## Stop Conditions
+
+Stop the loop when ANY of these are true:
+- Target score reached (from stop_conditions.json)
+- N consecutive failures (from stop_conditions.json)
+- Maximum iterations reached
+- User says "停止" or "stop"
+
+## Rules
+
+- ONE change per iteration — no multi-change iterations
+- Always run on a git branch (not main/master)
+- Never disable tests to make them pass
+- Never introduce dependencies without strong justification
+- Report score delta after each iteration
